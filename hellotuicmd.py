@@ -5,11 +5,13 @@ NL = "\n\n"
 GREEN = "\x1b[38;5;47m"
 RESET = "\x1b[0m"
 
-class HelloWinCmd(gdb.Command):
-    """Add text to the Tui window hello"""
+class AddTextCmd(gdb.Command):
+    """Add text to the Tui window hello
+addtext [string]
+string = text to be displayed"""
 
     def __init__(self):
-       super(HelloWinCmd, self).__init__("addtext", gdb.COMMAND_USER)
+       super(AddTextCmd, self).__init__("addtext", gdb.COMMAND_USER)
 
     def set_win(self, win):
         self.win = win
@@ -18,14 +20,14 @@ class HelloWinCmd(gdb.Command):
         self.win.set_text(arguments)
         self.win.render()
 
-# create an instance of our command class to register with gdb
-helloWinCmd = HelloWinCmd()
+# create an instance of our command class to register with gdb and keep a reference for later
+addTextCmd = AddTextCmd()
 
 # Factory Method
 def HelloWinFactory(tui):
     win =  HelloWindow(tui)
     # register the Window class with the addtext command
-    helloWinCmd.set_win(win)
+    addTextCmd.set_win(win)
     return win
 
 class HelloWindow(object):
@@ -42,7 +44,7 @@ class HelloWindow(object):
         if not self.tui.is_valid():
             return
 
-        self.tui.erase()
+        # self.tui.erase()
         self.tui.write(f'{GREEN}{self.text}{RESET}{NL}')
 
     def close(self):
