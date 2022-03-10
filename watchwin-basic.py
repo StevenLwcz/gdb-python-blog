@@ -1,4 +1,4 @@
-/* Blog Part 3 */
+# Blog Part 3
 
 GREEN = "\x1b[38;5;47m"
 BLUE  = "\x1b[38;5;14m"
@@ -61,10 +61,18 @@ class WatchWindow(object):
 
         self.tui.erase()
 
-        frame = gdb.selected_frame()
+        try:
+            frame = gdb.selected_frame()
+        except gdb.error:
+            self.tui.write("No frame currently selected" + NL)
+            return
+
+        self.tui.title = frame.name()
+
         for name in self.watch_list:
             try:
                 val = frame.read_var(name)
+
                 if name in self.prev and self.prev[name] != val:
                     hint = BLUE
                 else:
