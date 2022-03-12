@@ -28,15 +28,9 @@ class AutoWindow(object):
         gdb.events.before_prompt.disconnect(self.create_auto)
 
     def vscroll(self, num):
-        self.start += num
-        if self.start < 0:
-            self.start = 0
-        else:
-            length = len(self.list) - 1
-            if self.start > length:
-                self.start = length
-
-        self.render()
+        if num > 0 and self.start < len(self.list) - 1 or num < 0 and self.start > 0:
+            self.start += num
+            self.render()
 
     def render(self):
         if not self.tui.is_valid():
@@ -90,7 +84,7 @@ class AutoWindow(object):
 
             block = block.superblock
             if block.is_static:
-                block = False
+                break
 
         self.render()
 

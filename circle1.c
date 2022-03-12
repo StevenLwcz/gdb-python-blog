@@ -34,8 +34,10 @@ int main()
     char buff[] = "Hello Circle Program\0";
     char *p1 = buff;
 
-    struct Sector s1 = {180, 10};
-    struct Sector s2 = {45, 10};
+    typedef struct Sector Sector;
+
+    Sector s1 = {180, 10};
+    Sector s2 = {45, 10};
 
     float area = sectorArea(s1);
     float length = arcLength(s1);
