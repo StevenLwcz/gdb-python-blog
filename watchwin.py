@@ -26,7 +26,6 @@ Changes to the values while stepping are highlighted in blue."""
             self.window.set_watch_list(argv) 
         else:
             print("watch: Tui Window not active yet")
-            return
 
 watchCmd = WatchCmd()
 
@@ -45,7 +44,7 @@ class WatchWindow(object):
         self.tui = tui
         self.watch_list = WatchWindow.save_list
         self.prev = {}
-        self.title = None
+        self.title = ""
         self.start = 0
         self.list = []
 
