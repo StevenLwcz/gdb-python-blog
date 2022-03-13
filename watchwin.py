@@ -10,8 +10,12 @@ NL = "\n\n"
 class WatchCmd(gdb.Command):
     """Add variables to the TUI Window watch
 watch variable-list
-Variables will be greyed out when it goes out of scope.
-Changes to the values while stepping are highlighted in blue."""
+    Variables will be greyed out when it goes out of scope.
+    Changes to the values while stepping are highlighted in blue.
+watch del variable-list
+    Delete the variables from the watch window
+watch clear
+    Clears all variables from the watch window"""
 
     def __init__(self):
        super(WatchCmd, self).__init__("watch", gdb.COMMAND_DATA)
@@ -25,6 +29,8 @@ Changes to the values while stepping are highlighted in blue."""
         if self.window:
             if argv[0] == "del":
                 self.window.delete_from_watch_list(argv[1:]) 
+            elif argv[0] == "clear":
+                self.window.clear_watch_list()
             else:
                 self.window.add_watch_list(argv) 
         else:
@@ -53,6 +59,10 @@ class WatchWindow(object):
 
     def add_watch_list(self, list):
         self.watch_list.extend(list)
+
+    def clear_watch_list(self):
+        self.watch_list.clear()
+        self.prev.clear()
 
     def delete_from_watch_list(self, list):
         for l in list:
