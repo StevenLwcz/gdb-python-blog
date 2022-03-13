@@ -73,10 +73,7 @@ class AutoWindow(object):
                 arg = "*" if symbol.is_argument else " "
                 val = frame.read_var(symbol, block)
 
-                if name in self.prev and self.prev[name] != val:
-                    hint = BLUE
-                else:
-                    hint = WHITE
+                hint = BLUE if name in self.prev and self.prev[name] != val else WHITE
 
                 self.prev[name] = val
 
