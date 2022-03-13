@@ -23,7 +23,10 @@ Changes to the values while stepping are highlighted in blue."""
     def invoke(self, arguments, from_tty):
         argv = gdb.string_to_argv(arguments)
         if self.window:
-            self.window.set_watch_list(argv) 
+            if argv[0] == "del":
+                self.window.delete_from_watch_list(argv[1:]) 
+            else:
+                self.window.add_watch_list(argv) 
         else:
             print("watch: Tui Window not active yet")
 
@@ -48,8 +51,19 @@ class WatchWindow(object):
         self.start = 0
         self.list = []
 
-    def set_watch_list(self, list):
-        self.watch_list = list
+    def add_watch_list(self, list):
+        self.watch_list.extend(list)
+
+    def delete_from_watch_list(self, list):
+        for l in list:
+            try:
+                self.watch_list.remove(l)
+                try:
+                    del self.prev[l]
+                except:
+                    pass
+            except:
+                print(f"watch del: {l} not found")
 
     def vscroll(self, num):
         if num > 0 and num + self.start < len(self.list) -1 or \
