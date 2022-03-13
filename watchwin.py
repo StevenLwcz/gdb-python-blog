@@ -52,7 +52,8 @@ class WatchWindow(object):
         self.watch_list = list
 
     def vscroll(self, num):
-        if num > 0 and self.start < len(self.list) - 1 or num < 0 and self.start > 0:
+        if num > 0 and num + self.start < len(self.list) -1 or \
+           num < 0 and num + self.start > 0:
             self.start += num
             self.render()
 
@@ -77,12 +78,7 @@ class WatchWindow(object):
         for name in self.watch_list:
             try:
                 val = frame.read_var(name)
-
-                if name in self.prev and self.prev[name] != val:
-                    hint = BLUE
-                else:
-                    hint = WHITE
-
+                hint = BLUE if name in self.prev and self.prev[name] != val else WHITE
                 self.prev[name] = val
                 self.list.append(f'{GREEN}{name:<10}{hint}{val}{RESET}{NL}')
             except ValueError:

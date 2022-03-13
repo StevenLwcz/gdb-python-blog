@@ -28,7 +28,8 @@ class AutoWindow(object):
         gdb.events.before_prompt.disconnect(self.create_auto)
 
     def vscroll(self, num):
-        if num > 0 and self.start < len(self.list) - 1 or num < 0 and self.start > 0:
+        if num > 0 and num + self.start < len(self.list) -1 or \
+           num < 0 and num + self.start > 0:
             self.start += num
             self.render()
 

@@ -72,12 +72,7 @@ class WatchWindow(object):
         for name in self.watch_list:
             try:
                 val = frame.read_var(name)
-
-                if name in self.prev and self.prev[name] != val:
-                    hint = BLUE
-                else:
-                    hint = WHITE
-
+                hint = BLUE if name in self.prev and self.prev[name] != val else WHITE
                 self.prev[name] = val
                 self.tui.write(f'{GREEN}{name:<10}{hint}{val}{RESET}{NL}')
             except ValueError:
