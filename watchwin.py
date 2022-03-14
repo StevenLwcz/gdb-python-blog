@@ -30,18 +30,17 @@ watch clear
         argv = gdb.string_to_argv(arguments)
         argc = len(argv)
         if self.window:
-            if argv[0] == "del":
+            if argc == 0:
+                print("watch variable-list")
+            elif argv[0] == "del" and argc > 1:
                 self.window.delete_from_watch_list(argv[1:]) 
             elif argv[0] == "clear":
                 self.window.clear_watch_list()
-            elif argv[0] == "hex":
-                if argc == 3:
-                    if argv[1] == "on": 
-                        self.window.toggle_hex_mode(argv[2], True)
-                    elif argv[1] == "off":
-                        self.window.toggle_hex_mode(argv[2], False)
-                    else:
-                        print("watch hex [on|off] variable")
+            elif argv[0] == "hex" and argc == 3:
+                if argv[1] == "on": 
+                    self.window.toggle_hex_mode(argv[2], True)
+                elif argv[1] == "off":
+                    self.window.toggle_hex_mode(argv[2], False)
                 else:
                     print("watch hex [on|off] variable")
             else:
