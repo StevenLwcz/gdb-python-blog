@@ -12,6 +12,8 @@ class WatchCmd(gdb.Command):
 watch variable-list
     Variables will be greyed out when it goes out of scope.
     Changes to the values while stepping are highlighted in blue.
+watch hex variable-list
+    Add variables to be displayed in hex
 watch del variable-list
     Delete the variables from the watch window
 watch clear
@@ -26,13 +28,24 @@ watch clear
 
     def invoke(self, arguments, from_tty):
         argv = gdb.string_to_argv(arguments)
+        argc = len(argv)
         if self.window:
             if argv[0] == "del":
                 self.window.delete_from_watch_list(argv[1:]) 
             elif argv[0] == "clear":
                 self.window.clear_watch_list()
+            elif argv[0] == "hex":
+                if argc == 3:
+                    if argv[1] == "on": 
+                        self.window.toggle_hex_mode(argv[2], True)
+                    elif argv[1] == "off":
+                        self.window.toggle_hex_mode(argv[2], False)
+                    else:
+                        print("watch hex [on|off] variable")
+                else:
+                    print("watch hex [on|off] variable")
             else:
-                self.window.add_watch_list(argv) 
+                self.window.add_watch_dict(argv) 
         else:
             print("watch: Tui Window not active yet")
 
@@ -47,36 +60,36 @@ def WatchWinFactory(tui):
 
 class WatchWindow(object):
 
-    save_list = []
+    save_dict = {}
 
     def __init__(self, tui):
         self.tui = tui
-        self.watch_list = WatchWindow.save_list
+        self.watch_dict = WatchWindow.save_dict
         self.prev = {}
         self.title = ""
         self.start = 0
         self.list = []
 
-    def add_watch_list(self, list):
-        self.watch_list.extend(list)
+    def add_watch_dict(self, list):
+        self.watch_dict.update(dict.fromkeys(list, False))
+
+    def toggle_hex_mode(self, name, mode):
+        self.watch_dict[name] = mode
 
     def clear_watch_list(self):
-        self.watch_list.clear()
+        self.watch_dict.clear()
         self.prev.clear()
 
     def delete_from_watch_list(self, list):
         for l in list:
             try:
-                self.watch_list.remove(l)
-                try:
-                    del self.prev[l]
-                except:
-                    pass
+                del self.watch_dict[l]
+                del self.prev[l]
             except:
                 print(f"watch del: {l} not found")
 
     def vscroll(self, num):
-        if num > 0 and num + self.start < len(self.list) -1 or \
+        if num > 0 and num + self.start < len(self.list) or \
            num < 0 and num + self.start > 0:
             self.start += num
             self.render()
@@ -84,7 +97,7 @@ class WatchWindow(object):
     def close(self):
         gdb.events.before_prompt.disconnect(self.create_watch)
         # save the watch list so it will be restored when the window is activated
-        WatchWindow.save_list = self.watch_list
+        WatchWindow.save_dict = self.watch_dict
 
     def create_watch(self):
         self.list = []
@@ -99,11 +112,12 @@ class WatchWindow(object):
 
         self.title = frame.name()
 
-        for name in self.watch_list:
+        for name, hex in self.watch_dict.items():
             try:
                 val = frame.read_var(name)
                 hint = BLUE if name in self.prev and self.prev[name] != val else WHITE
                 self.prev[name] = val
+                if hex: val = val.format_string(format="x")
                 self.list.append(f'{GREEN}{name:<10}{hint}{val}{RESET}{NL}')
             except ValueError:
                 self.list.append(f'{GREY}{name:<10}{NL}') 
