@@ -3,6 +3,7 @@
 GREEN = "\x1b[38;5;47m"
 BLUE  = "\x1b[38;5;14m"
 WHITE = "\x1b[38;5;15m"
+YELLOW = "\x1b[38;5;226m"
 GREY  = "\x1b[38;5;246m"
 RESET = "\x1b[0m"
 NL = "\n\n"
@@ -43,6 +44,13 @@ watch clear
                     self.window.toggle_hex_mode(argv[2], False)
                 else:
                     print("watch hex [on|off] variable")
+            elif argv[0] == "type" and argc == 2:
+                if argv[1] == "on":
+                    self.window.toggle_type_mode(True)
+                elif argv[1] == "off":
+                    self.window.toggle_type_mode(False)
+                else:
+                    print("watch type [on|off]")
             else:
                 self.window.add_watch_dict(argv) 
         else:
@@ -68,12 +76,16 @@ class WatchWindow(object):
         self.title = ""
         self.start = 0
         self.list = []
+        self.type_mode = False
 
     def add_watch_dict(self, list):
         self.watch_dict.update(dict.fromkeys(list, False))
 
     def toggle_hex_mode(self, name, mode):
         self.watch_dict[name] = mode
+
+    def toggle_type_mode(self, mode):
+        self.type_mode = mode
 
     def clear_watch_list(self):
         self.watch_dict.clear()
@@ -113,11 +125,14 @@ class WatchWindow(object):
 
         for name, hex in self.watch_dict.items():
             try:
-                val = frame.read_var(name)
-                hint = BLUE if name in self.prev and self.prev[name] != val else WHITE
-                self.prev[name] = val
-                if hex: val = val.format_string(format="x")
-                self.list.append(f'{GREEN}{name:<10}{hint}{val}{RESET}{NL}')
+                value = frame.read_var(name)
+                hint = BLUE if name in self.prev and self.prev[name] != value else WHITE
+                self.prev[name] = value
+                st = value.format_string(format="x") if hex else value
+                if self.type_mode:
+                    self.list.append(f'{YELLOW}{str(value.type):<16}{GREEN}{name:<10}{hint}{st}{RESET}{NL}')
+                else:
+                    self.list.append(f'{GREEN}{name:<10}{hint}{st}{RESET}{NL}')
             except ValueError:
                 self.list.append(f'{GREY}{name:<10}{NL}') 
 
