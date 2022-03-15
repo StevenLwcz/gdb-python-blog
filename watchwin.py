@@ -9,16 +9,19 @@ RESET = "\x1b[0m"
 NL = "\n\n"
 
 class WatchCmd(gdb.Command):
-    """Add variables to the TUI Window watch
+    """Add variables to the TUI Window watch.
 watch variable-list
     Variables will be greyed out when it goes out of scope.
     Changes to the values while stepping are highlighted in blue.
-watch hex variable-list
-    Add variables to be displayed in hex
+watch hex [on|of] variable
+    Toggle display of a variable in hex. Add if not already in the watch window.
 watch del variable-list
-    Delete the variables from the watch window
+    Delete the variables from the watch window.
 watch clear
-    Clears all variables from the watch window"""
+    Clears all variables from the watch window.
+watch type [on|off]
+    Toggle display of the variable type."""
+
 
     def __init__(self):
        super(WatchCmd, self).__init__("watch", gdb.COMMAND_DATA)
