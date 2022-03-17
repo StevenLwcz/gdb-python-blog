@@ -11,17 +11,16 @@ NL = "\n\n"
 class WatchCmd(gdb.Command):
     """Add variables to the TUI Window watch.
 watch variable-list
-    Variables will be greyed out when it goes out of scope.
-    Changes to the values while stepping are highlighted in blue.
+    Variables will be greyed out when they go out of scope.
+    Changes to values while stepping are highlighted in blue.
 watch hex [on|of] variable-list
     Toggle display of a variable in hex. Add if not already in the watch window.
 watch del variable-list
-    Delete the variables from the watch window.
+    Delete variables from the watch window.
 watch clear
     Clears all variables from the watch window.
 watch type [on|off]
-    Toggle display of the variable type and indicate: static(=), global(^) or argument(*)."""
-
+    Toggle display of the variable type and indicator: static(=), global(^) or argument(*)."""
 
     def __init__(self):
        super(WatchCmd, self).__init__("watch", gdb.COMMAND_DATA)
@@ -64,7 +63,7 @@ watchCmd = WatchCmd()
 def WatchWinFactory(tui):
     win = WatchWindow(tui)
     watchCmd.set_window(win)
-    # register render() to be called each time the gdb prompt will be displayed
+    # register create_watch() to be called each time the gdb prompt is displayed.
     gdb.events.before_prompt.connect(win.create_watch)
     return win
 
