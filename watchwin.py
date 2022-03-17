@@ -71,34 +71,31 @@ def WatchWinFactory(tui):
 class WatchWindow(object):
 
     save_watch = {}
-    save_tag = {}
 
     def __init__(self, tui):
         self.tui = tui
         self.watch = WatchWindow.save_watch
-        self.tag = WatchWindow.save_tag
-        self.prev = {}
         self.title = ""
         self.start = 0
         self.list = []
         self.type_mode = False
 
-    def add_watch(self, list):
+    def add_watch(self, list, hex_mode=False):
         for name in list:
             symbol = gdb.lookup_global_symbol(name)
             if symbol and symbol.is_variable:
-                self.tag[name] = "^"
+                tag = "^"
             else:
                 symbol = gdb.lookup_static_symbol(name)
                 if symbol and symbol.is_variable:
-                    self.tag[name] = "="
+                    tag = "="
                 else:
                     symbol = gdb.lookup_symbol(name)[0]
                     if symbol:
                         if symbol.is_argument:
-                            self.tag[name] = "*"
+                            tag = "*"
                         elif symbol.is_variable:
-                            self.tag[name] = " "
+                            tag = " "
                         else: 
                             print(f'watch: {name} is not a variable or argument.')
                             return
@@ -106,25 +103,25 @@ class WatchWindow(object):
                         print(f'watch: {name} not found in current frame.')
                         return
 
-        self.watch.update(dict.fromkeys(list, False))
+            self.watch[name] = {'tag': tag, 'type': str(symbol.type) , 'hex': hex_mode, 'val': None}
 
+# hex bypasses all check above
     def toggle_hex_mode(self, name, mode):
-        self.watch[name] = mode
+        if name in self.watch:
+            self.watch[name]['hex'] = mode
+        else:
+            self.add_watch([name], mode)
 
     def toggle_type_mode(self, mode):
         self.type_mode = mode
 
     def clear_watch_list(self):
         self.watch.clear()
-        self.prev.clear()
-        self.tag.clear()
 
     def delete_from_watch_list(self, list):
         for l in list:
             try:
                 del self.watch[l]
-                del self.prev[l]
-                del self.tag[l]
             except:
                 print(f"watch del: {l} not found")
 
@@ -138,7 +135,6 @@ class WatchWindow(object):
         gdb.events.before_prompt.disconnect(self.create_watch)
         # save the watch dictionary so it will be restored when the window is activated
         WatchWindow.save_watch = self.watch
-        WatchWindow.save_tag = self.tag
 
     def create_watch(self):
         self.list = []
@@ -153,14 +149,14 @@ class WatchWindow(object):
 
         self.title = frame.name()
 
-        for name, hex in self.watch.items():
+        for name, attr in self.watch.items():
             try:
                 value = frame.read_var(name)
-                hint = BLUE if name in self.prev and self.prev[name] != value else WHITE
-                self.prev[name] = value
-                st = value.format_string(format="x") if hex else value
+                hint = BLUE if attr['val'] != value else WHITE
+                self.watch[name]['val'] = value
+                st = value.format_string(format="x") if attr['hex'] else value
                 if self.type_mode:
-                    self.list.append(f'{self.tag[name]}{YELLOW}{str(value.type):<16}{GREEN}{name:<10}{hint}{st}{RESET}{NL}')
+                    self.list.append(f'{attr["tag"]}{YELLOW}{attr["type"]:<16}{GREEN}{name:<10}{hint}{st}{RESET}{NL}')
                 else:
                     self.list.append(f'{GREEN}{name:<10}{hint}{st}{RESET}{NL}')
             except ValueError:
