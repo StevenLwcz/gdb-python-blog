@@ -13,14 +13,14 @@ class WatchCmd(gdb.Command):
 watch variable-list
     Variables will be greyed out when it goes out of scope.
     Changes to the values while stepping are highlighted in blue.
-watch hex [on|of] variable
+watch hex [on|of] variable-list
     Toggle display of a variable in hex. Add if not already in the watch window.
 watch del variable-list
     Delete the variables from the watch window.
 watch clear
     Clears all variables from the watch window.
 watch type [on|off]
-    Toggle display of the variable type and indicate whether static(=), global(^) or argument(*)."""
+    Toggle display of the variable type and indicate: static(=), global(^) or argument(*)."""
 
 
     def __init__(self):
@@ -40,13 +40,13 @@ watch type [on|off]
                 self.window.delete_from_watch_list(argv[1:]) 
             elif argv[0] == "clear":
                 self.window.clear_watch_list()
-            elif argv[0] == "hex" and argc == 3:
-                if argv[1] == "on": 
-                    self.window.toggle_hex_mode(argv[2], True)
-                elif argv[1] == "off":
-                    self.window.toggle_hex_mode(argv[2], False)
+            elif argv[0] == "hex" and argc > 1:
+                if argv[1] == "on" and argc > 2:
+                    self.window.toggle_hex_mode(argv[2:], True)
+                elif argv[1] == "off" and argc > 2:
+                    self.window.toggle_hex_mode(argv[2:], False)
                 else:
-                    print("watch hex [on|off] variable")
+                    print("watch hex [on|off] variable-list")
             elif argv[0] == "type" and argc == 2:
                 if argv[1] == "on":
                     self.window.toggle_type_mode(True)
@@ -105,12 +105,12 @@ class WatchWindow(object):
 
             self.watch[name] = {'tag': tag, 'type': str(symbol.type) , 'hex': hex_mode, 'val': None}
 
-# hex bypasses all check above
-    def toggle_hex_mode(self, name, mode):
-        if name in self.watch:
-            self.watch[name]['hex'] = mode
-        else:
-            self.add_watch([name], mode)
+    def toggle_hex_mode(self, list, mode):
+        for name in list:
+            if name in self.watch:
+                self.watch[name]['hex'] = mode
+            else:
+                self.add_watch([name], mode)
 
     def toggle_type_mode(self, mode):
         self.type_mode = mode
