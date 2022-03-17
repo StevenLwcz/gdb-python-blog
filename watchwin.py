@@ -160,7 +160,10 @@ class WatchWindow(object):
                 else:
                     self.list.append(f'{GREEN}{name:<10}{hint}{st}{RESET}{NL}')
             except ValueError:
-                self.list.append(f'{GREY}{name:<10}{RESET}{NL}') 
+                if self.type_mode:
+                    self.list.append(f'{GREY}{attr["tag"]}{attr["type"]:<16}{name:<10}{attr["val"]}{RESET}{NL}')
+                else:
+                    self.list.append(f'{GREY}{name:<10}{attr["val"]}{RESET}{NL}')
 
         self.render()
 
