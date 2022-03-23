@@ -1,5 +1,3 @@
-# Blog Part 3
-
 GREEN = "\x1b[38;5;47m"
 BLUE  = "\x1b[38;5;14m"
 WHITE = "\x1b[38;5;15m"
