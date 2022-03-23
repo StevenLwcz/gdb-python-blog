@@ -4,7 +4,7 @@ r
 layout src
 
 # so vector.py
-# tui layout debug1 vector 1 src 1 status 0 cmd 1
+# tui new-layout debug1 vector 1 src 1 status 0 cmd 1
 # layout debug1
 
 # vector v0.b.u v1.h.u 
