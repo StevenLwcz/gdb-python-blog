@@ -13,5 +13,5 @@ _start:
 
 end:
     mov     x0, #0      /* status */
-    mov     x8, #93     /* exit is syscall 93 */
+    mov     x8, #93     /* exit() */
     svc     #0          
