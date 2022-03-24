@@ -1,4 +1,5 @@
 all: blog5
+32: blog5_32
 
 %.o:%.s
 	as -g -o $@ $<
@@ -6,5 +7,8 @@ all: blog5
 blog5: blog5.o
 	ld -o $@ $<
 
+blog5_32: blog5_32.o
+	ld -o blog5 $<
+
 clean:
-	rm blog5 blog5.o
+	rm -f blog5 blog5.o blog5_32.o
