@@ -1,0 +1,14 @@
+32: blog6_32
+64: blog6_64
+
+%.o:%.s
+	as -g -o $@ $<
+
+blog6_64: blog6_64.o
+	ld -o $@ $<
+
+blog6_32: blog6_32.o
+	ld -o $@ $<
+
+clean:
+	rm -f blog6_32 blog6_64 blog6_32.o blog6_64.o
