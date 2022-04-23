@@ -1,3 +1,4 @@
+# .cpu cortex-a53
 .cpu cortex-a76
 .text
 .globl _start
@@ -14,7 +15,7 @@ _start:
 
     # Float Immediate 
 
-    fmov v8.8h, 1.5
+    fmov v8.8h, 1.5       // cortex-a76
     fmov v10.4s, -2.5
     fmov v12.2d, 3.5
 
