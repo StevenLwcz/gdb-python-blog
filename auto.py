@@ -13,11 +13,11 @@ def AutoWinFactory(tui):
     gdb.events.before_prompt.connect(win.create_auto)
     return win
 
-def split_with_ansi_escape(idx, st):
+def split_with_ansi_escape(idx, start, st):
     seq = ""
     esc = False
     count = 0
-    for i, c in enumerate(st):
+    for i, c in enumerate(st[start:]):
         if esc:
             seq += c
             count += 1
@@ -34,7 +34,7 @@ def split_with_ansi_escape(idx, st):
             elif c == '\n':
                 break
 
-    return(seq + st[i:])
+    return(st[0:start] + seq + st[i + start:])
 
 class AutoWindow(object):
 
@@ -74,7 +74,7 @@ class AutoWindow(object):
                 self.tui.write(l)
         else:
             for l in self.list[self.start:]:
-                self.tui.write(split_with_ansi_escape(self.horiz, l))
+                self.tui.write(split_with_ansi_escape(self.horiz, 7, l))
 
     def create_auto(self):
         self.list = []
