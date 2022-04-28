@@ -7,8 +7,40 @@ YELLOW = "\x1b[38;5;226m"
 RESET = "\x1b[0m"
 NL = "\n\n"
 
+
+
+fmt_list = ['o', 'x', 'd', 'u', 't', 'f', 'a', 'i', 'c', 's', 'z']
+
+class AutoCmd(gdb.Command):
+   """auto /FMT variable-list
+/FMT as per GDB command x.
+Change the format for any variable displayed in the auto window."""
+
+   def __init__(self):
+       super().__init__("auto", gdb.COMMAND_DATA)
+       self.window = None
+
+   def set_window(self, window):
+       self.window = window
+
+   def invoke(self, arguments, from_tty):
+        argv = gdb.string_to_argv(arguments)
+        argc = len(argv)
+        if self.window:
+            if argc < 2:
+                print("auto /FMT variable-list")
+            elif argv[0][0:1] == '/' and argv[0][1:2] in fmt_list:
+                self.window.set_format(argc, argv) 
+            else:
+                print("auto /FMT variable-list")
+        else:
+            print("auto: Tui window not active yet")
+ 
+autoCmd = AutoCmd()
+
 def AutoWinFactory(tui):
     win = AutoWindow(tui)
+    autoCmd.set_window(win)
     # register create_auto() to be called each time the gdb prompt will be displayed
     gdb.events.before_prompt.connect(win.create_auto)
     return win
@@ -46,6 +78,20 @@ class AutoWindow(object):
         self.list = []
         self.title = ""
         self.block = None
+        self.format = {}
+
+    def set_format(self, argc, argv):
+        fmt = argv[0][1:2]
+        del argv[0]
+        for name in argv:
+            symbol = gdb.lookup_symbol(name)[0]
+            if symbol and (symbol.is_variable or symbol.is_argument):
+                self.format[name] = fmt
+            else:
+                print(f'auto: {name} is not a variable or argument.')
+                return
+
+        self.render()
 
     def close(self):
         # stop create_auto() being called when the window has been closed
@@ -108,8 +154,10 @@ class AutoWindow(object):
                 val = frame.read_var(symbol, block)
 
                 hint = BLUE if name in self.prev and self.prev[name] != val else WHITE
-
                 self.prev[name] = val
+
+                if name in self.format:
+                    val = val.format_string(format=self.format[name])
 
                 self.list.append(f'{arg}{line:<6}{YELLOW}{type:<16}{GREEN}{name:<10}{hint}{val}{RESET}{NL}')
 
