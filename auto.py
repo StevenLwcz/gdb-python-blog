@@ -46,6 +46,10 @@ def AutoWinFactory(tui):
     return win
 
 def split_with_ansi_escape(idx, start, st):
+    """return the string st at offset idx not counting ANSI escape sequences
+from offset start, which needs to include ANSI escape sequences.
+The first characer in the string will be the last ANSI escape sequence enountered"""
+
     seq = ""
     esc = False
     count = 0
@@ -69,6 +73,8 @@ def split_with_ansi_escape(idx, start, st):
     return(st[0:start] + seq + st[i + start:])
 
 class AutoWindow(object):
+
+    LineOffset = 7 # Keep Line numbers when horizontal scrolling.
 
     def __init__(self, tui):
         self.tui = tui
@@ -120,7 +126,7 @@ class AutoWindow(object):
                 self.tui.write(l)
         else:
             for l in self.list[self.start:]:
-                self.tui.write(split_with_ansi_escape(self.horiz, 7, l))
+                self.tui.write(split_with_ansi_escape(self.horiz, AutoWindow.LineOffset, l))
 
     def create_auto(self):
         self.list = []
