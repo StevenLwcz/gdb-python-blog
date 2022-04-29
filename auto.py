@@ -7,8 +7,6 @@ YELLOW = "\x1b[38;5;226m"
 RESET = "\x1b[0m"
 NL = "\n\n"
 
-
-
 fmt_list = ['o', 'x', 'd', 'u', 't', 'f', 'a', 'i', 'c', 's', 'z']
 
 class AutoCmd(gdb.Command):
@@ -72,6 +70,16 @@ The first characer in the string will be the last ANSI escape sequence enountere
 
     return(st[0:start] + seq + st[i + start:])
 
+AutoVariableOffset = 27   # 11 (Yellow) + 16 (Type)
+AutoValueOffset = 24      # 10 (Green) + 10 (Name) - 2 (Idx)
+
+def scroll_auto_line(idx, start, st):
+    if idx == 1:                                           # skip type
+        i = AutoVariableOffset
+        return(st[0:start] + st[start + i:])
+    else:
+        return split_with_ansi_escape(idx + AutoValueOffset, start, st) 
+
 class AutoWindow(object):
 
     LineOffset = 7 # Keep Line numbers when horizontal scrolling.
@@ -126,7 +134,8 @@ class AutoWindow(object):
                 self.tui.write(l)
         else:
             for l in self.list[self.start:]:
-                self.tui.write(split_with_ansi_escape(self.horiz, AutoWindow.LineOffset, l))
+                self.tui.write(scroll_auto_line(self.horiz, AutoWindow.LineOffset, l))
+                # self.tui.write(split_with_ansi_escape(self.horiz, AutoWindow.LineOffset, l))
 
     def create_auto(self):
         self.list = []
