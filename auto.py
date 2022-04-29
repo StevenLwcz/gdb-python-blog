@@ -30,7 +30,7 @@ Change the format for any variable displayed in the auto window."""
             elif argv[0][0:1] == '/' and argv[0][1:2] in fmt_list:
                 self.window.set_format(argc, argv) 
             else:
-                print("auto /FMT variable-list")
+                print(f"auto /FMT variable-list. /{fmt_list}")
         else:
             print("auto: Tui window not active yet")
  
