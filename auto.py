@@ -43,22 +43,43 @@ def AutoWinFactory(tui):
     gdb.events.before_prompt.connect(win.create_auto)
     return win
 
-def split_with_ansi_escape(idx, start, st):
-    """return the string st at offset idx not counting ANSI escape sequences
-from offset start, which needs to include ANSI escape sequences.
-The first characer in the string will be the last ANSI escape sequence enountered"""
+def substr_start_with_ansi(end_off, st):
+    """return the start of the string ending at end_off"""
+
+    esc = False
+    count = 0
+    for i, c in enumerate(st):
+        if esc:
+            count += 1
+            if c == 'm':
+               esc = False
+        else:
+            if i - count >= end_off:
+                break  
+
+            if c == '\x1b':
+                esc = True
+                count += 1
+            elif c == '\n':
+                break
+
+    return(st[0:i])
+
+def substr_end_with_ansi(start_off, st):
+    """return the end of the string starting from start_off"""
 
     seq = ""
     esc = False
     count = 0
-    for i, c in enumerate(st[start:]):
+    j = 0
+    for i, c in enumerate(st):
         if esc:
             seq += c
             count += 1
             if c == 'm':
                esc = False
         else:
-            if i - count >= idx:
+            if i - count >= start_off:
                 break
 
             if c == '\x1b':
@@ -68,21 +89,15 @@ The first characer in the string will be the last ANSI escape sequence enountere
             elif c == '\n':
                 break
 
-    return(st[0:start] + seq + st[i + start:])
+    return(seq + st[i:])
 
-AutoVariableOffset = 27   # 11 (Yellow) + 16 (Type)
-AutoValueOffset = 24      # 10 (Green) + 10 (Name) - 2 (Idx)
-
-def scroll_auto_line(idx, start, st):
-    if idx == 1:                                           # skip type
-        i = AutoVariableOffset
-        return(st[0:start] + st[start + i:])
-    else:
-        return split_with_ansi_escape(idx + AutoValueOffset, start, st) 
 
 class AutoWindow(object):
 
-    LineOffset = 7 # Keep Line numbers when horizontal scrolling.
+    LineOffset = 7 
+    NameOffset = LineOffset + 16
+    ValueOffset = NameOffset + 10
+    ValueOffsetm2 = NameOffset + 8
 
     def __init__(self, tui):
         self.tui = tui
@@ -134,8 +149,11 @@ class AutoWindow(object):
                 self.tui.write(l)
         else:
             for l in self.list[self.start:]:
-                self.tui.write(scroll_auto_line(self.horiz, AutoWindow.LineOffset, l))
-                # self.tui.write(split_with_ansi_escape(self.horiz, AutoWindow.LineOffset, l))
+                self.tui.write(AutoWindow.scroll_auto_line_2(self.horiz, l))
+                # self.tui.write(AutoWindow.scroll_auto_line_1(AutoWindow.ValueOffset, self.horiz, l))
+                # self.tui.write(AutoWindow.scroll_auto_line_1(AutoWindow.NameOffset, self.horiz, l))
+                # self.tui.write(AutoWindow.scroll_auto_line_1(AutoWindow.LineOffset, self.horiz, l))
+                # self.tui.write(substr_end_with_ansi(self.horiz, l))
 
     def create_auto(self):
         self.list = []
@@ -181,5 +199,21 @@ class AutoWindow(object):
                 break
 
         self.render()
+
+# scroll horizontally keeping the text to end_off static
+    @classmethod
+    def scroll_auto_line_1(self, end_off, hs_off, st):
+        return substr_start_with_ansi(end_off, st) + substr_end_with_ansi(end_off + hs_off, st)
+
+# scroll horizontally
+# 1st left scroll make the type names disapear
+# 2nd left scroll make the variable names disapear
+# 3nd left scroll scroll the value to the left
+    @classmethod
+    def scroll_auto_line_2(self, hs_off, st):
+        if hs_off == 1:
+            return substr_start_with_ansi(AutoWindow.LineOffset, st) + substr_end_with_ansi(AutoWindow.NameOffset, st)
+        else:
+            return substr_start_with_ansi(AutoWindow.LineOffset, st) + substr_end_with_ansi(AutoWindow.ValueOffsetm2 + hs_off, st)
 
 gdb.register_window_type("auto", AutoWinFactory)
