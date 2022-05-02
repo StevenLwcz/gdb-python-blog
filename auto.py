@@ -10,9 +10,10 @@ NL = "\n\n"
 fmt_list = ['o', 'x', 'd', 'u', 't', 'f', 'a', 'i', 'c', 's', 'z']
 
 class AutoCmd(gdb.Command):
-   """auto /FMT variable-list
+   """auto [/FMT] variable-list
 /FMT as per GDB command x.
-Change the format for any variable displayed in the auto window."""
+Change the format specifier for any variable displayed in the auto window.
+If /FMT is not used then this clears any format specifer for the variables listed."""
 
    def __init__(self):
        super().__init__("auto", gdb.COMMAND_DATA)
@@ -25,14 +26,20 @@ Change the format for any variable displayed in the auto window."""
         argv = gdb.string_to_argv(arguments)
         argc = len(argv)
         if self.window:
-            if argc < 2:
-                print("auto /FMT variable-list")
-            elif argv[0][0:1] == '/' and argv[0][1:2] in fmt_list:
-                self.window.set_format(argc, argv) 
+            if argc == 0:
+                print(f"auto [/FMT] variable-list. FMT is one of {fmt_list}.")
+            elif argv[0][0:1] == '/':
+                if argv[0][1:2] in fmt_list:
+                    if argc > 1:
+                        self.window.set_format(argv) 
+                    else:
+                        print(f'auto /FMT variable-list: variable-list missing.')
+                else:
+                    print(f'auto /FMT variable-list. {argv[0][1:2]} not in {fmt_list}.')
             else:
-                print(f"auto /FMT variable-list. /{fmt_list}")
+                self.window.clear_format(argv) 
         else:
-            print("auto: Tui window not active yet")
+            print("auto: Tui window not active yet.")
  
 autoCmd = AutoCmd()
 
@@ -44,7 +51,7 @@ def AutoWinFactory(tui):
     return win
 
 def substr_start_with_ansi(end_off, st):
-    """return the start of the string ending at end_off"""
+    """return the beginning of the string ending at end_off"""
 
     esc = False
     count = 0
@@ -91,7 +98,6 @@ def substr_end_with_ansi(start_off, st):
 
     return(seq + st[i:])
 
-
 class AutoWindow(object):
 
     LineOffset = 7 
@@ -109,7 +115,7 @@ class AutoWindow(object):
         self.block = None
         self.format = {}
 
-    def set_format(self, argc, argv):
+    def set_format(self, argv):
         fmt = argv[0][1:2]
         del argv[0]
         for name in argv:
@@ -118,6 +124,16 @@ class AutoWindow(object):
                 self.format[name] = fmt
             else:
                 print(f'auto: {name} is not a variable or argument.')
+                return
+
+        self.render()
+
+    def clear_format(self, argv):
+        for name in argv:
+            if name in self.format:
+                del self.format[name]
+            else:
+                print(f'auto: No specifier for {name} has been set.')
                 return
 
         self.render()
