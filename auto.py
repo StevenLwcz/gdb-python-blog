@@ -78,7 +78,6 @@ def substr_end_with_ansi(start_off, st):
     seq = ""
     esc = False
     count = 0
-    j = 0
     for i, c in enumerate(st):
         if esc:
             seq += c
@@ -152,7 +151,7 @@ class AutoWindow(object):
         if num > 0 or num < 0 and num + self.horiz >= 0:
             self.horiz += num
             self.render()
-    
+
     def render(self):
         if not self.tui.is_valid():
             return
