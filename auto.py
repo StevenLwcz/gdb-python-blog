@@ -163,10 +163,10 @@ class AutoWindow(object):
                 self.tui.write(l)
         else:
             for l in self.list[self.start:]:
-                self.tui.write(AutoWindow.scroll_auto_line_2(self.horiz, l))
-                # self.tui.write(AutoWindow.scroll_auto_line_1(AutoWindow.ValueOffset, self.horiz, l))
-                # self.tui.write(AutoWindow.scroll_auto_line_1(AutoWindow.NameOffset, self.horiz, l))
-                # self.tui.write(AutoWindow.scroll_auto_line_1(AutoWindow.TypeOffset, self.horiz, l))
+                self.tui.write(self.scroll_auto_line_2(l))
+                # self.tui.write(self.scroll_auto_line_1(AutoWindow.ValueOffset, l))
+                # self.tui.write(self.scroll_auto_line_1(AutoWindow.NameOffset, l))
+                # self.tui.write(self.scroll_auto_line_1(AutoWindow.TypeOffset, l))
                 # self.tui.write(substr_end_with_ansi(self.horiz, l))
 
     def create_auto(self):
@@ -215,19 +215,17 @@ class AutoWindow(object):
         self.render()
 
 # scroll horizontally keeping the text to end_off static
-    @classmethod
-    def scroll_auto_line_1(self, end_off, hs_off, st):
-        return substr_start_with_ansi(end_off, st) + substr_end_with_ansi(end_off + hs_off, st)
+    def scroll_auto_line_1(self, end_off, st):
+        return substr_start_with_ansi(end_off, st) + substr_end_with_ansi(end_off + self.horiz, st)
 
 # scroll horizontally
-# 1st left scroll make the type names disappear
-# 2nd left scroll make the variable names disappear
-# 3nd left scroll scroll the value to the left
-    @classmethod
-    def scroll_auto_line_2(self, hs_off, st):
-        if hs_off == 1:
+# horiz = 1: make the type names disappear
+# horiz = 2: make the variable names disappear
+# horiz > 2: scroll the value
+    def scroll_auto_line_2(self, st):
+        if self.horiz == 1:
             return substr_start_with_ansi(AutoWindow.TypeOffset, st) + substr_end_with_ansi(AutoWindow.NameOffset, st)
         else:
-            return substr_start_with_ansi(AutoWindow.TypeOffset, st) + substr_end_with_ansi(AutoWindow.ValueOffsetm2 + hs_off, st)
+            return substr_start_with_ansi(AutoWindow.TypeOffset, st) + substr_end_with_ansi(AutoWindow.ValueOffsetm2 + self.horiz, st)
 
 gdb.register_window_type("auto", AutoWinFactory)
