@@ -220,8 +220,8 @@ class AutoWindow(object):
         return substr_start_with_ansi(end_off, st) + substr_end_with_ansi(end_off + hs_off, st)
 
 # scroll horizontally
-# 1st left scroll make the type names disapear
-# 2nd left scroll make the variable names disapear
+# 1st left scroll make the type names disappear
+# 2nd left scroll make the variable names disappear
 # 3nd left scroll scroll the value to the left
     @classmethod
     def scroll_auto_line_2(self, hs_off, st):
