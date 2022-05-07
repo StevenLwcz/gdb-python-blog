@@ -67,13 +67,12 @@ def substr_start_with_ansi(end_off, st):
             if c == '\x1b':
                 esc = True
                 count += 1
-            elif c == '\n':
-                break
 
     return(st[0:i])
 
 def substr_end_with_ansi(start_off, st):
-    """return the end of the string starting from start_off"""
+    """return the end of the string starting from start_off
+       will always return the end of line characters"""
 
     seq = ""
     esc = False
@@ -99,8 +98,8 @@ def substr_end_with_ansi(start_off, st):
 
 class AutoWindow(object):
 
-    LineOffset = 7 
-    NameOffset = LineOffset + 16
+    TypeOffset = 7 
+    NameOffset = TypeOffset + 16
     ValueOffset = NameOffset + 10
     ValueOffsetm2 = NameOffset + 8
 
@@ -167,7 +166,7 @@ class AutoWindow(object):
                 self.tui.write(AutoWindow.scroll_auto_line_2(self.horiz, l))
                 # self.tui.write(AutoWindow.scroll_auto_line_1(AutoWindow.ValueOffset, self.horiz, l))
                 # self.tui.write(AutoWindow.scroll_auto_line_1(AutoWindow.NameOffset, self.horiz, l))
-                # self.tui.write(AutoWindow.scroll_auto_line_1(AutoWindow.LineOffset, self.horiz, l))
+                # self.tui.write(AutoWindow.scroll_auto_line_1(AutoWindow.TypeOffset, self.horiz, l))
                 # self.tui.write(substr_end_with_ansi(self.horiz, l))
 
     def create_auto(self):
@@ -227,8 +226,8 @@ class AutoWindow(object):
     @classmethod
     def scroll_auto_line_2(self, hs_off, st):
         if hs_off == 1:
-            return substr_start_with_ansi(AutoWindow.LineOffset, st) + substr_end_with_ansi(AutoWindow.NameOffset, st)
+            return substr_start_with_ansi(AutoWindow.TypeOffset, st) + substr_end_with_ansi(AutoWindow.NameOffset, st)
         else:
-            return substr_start_with_ansi(AutoWindow.LineOffset, st) + substr_end_with_ansi(AutoWindow.ValueOffsetm2 + hs_off, st)
+            return substr_start_with_ansi(AutoWindow.TypeOffset, st) + substr_end_with_ansi(AutoWindow.ValueOffsetm2 + hs_off, st)
 
 gdb.register_window_type("auto", AutoWinFactory)
