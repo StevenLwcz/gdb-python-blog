@@ -6,13 +6,17 @@ GREY  = "\x1b[38;5;246m"
 RESET = "\x1b[0m"
 NL = "\n\n"
 
+fmt_list = ['o', 'x', 'd', 'u', 't', 'f', 'a', 'i', 'c', 's', 'z']
+
 class WatchCmd(gdb.Command):
     """Add variables to the TUI Window watch.
 watch variable-list
     Variables will be greyed out when they go out of scope.
     Changes to values while stepping are highlighted in blue.
-watch hex [on|of] variable-list
-    Toggle display of a variable in hex. Add if not already in the watch window.
+watch /FMT  variable-list
+    Set the format specifier as per print /FMT for the variable list
+watch /C variable-list
+    Clear the format specifier for the variable list
 watch del variable-list
     Delete variables from the watch window.
 watch clear
@@ -37,13 +41,20 @@ watch type [on|off]
                 self.window.delete_from_watch_list(argv[1:]) 
             elif argv[0] == "clear":
                 self.window.clear_watch_list()
-            elif argv[0] == "hex" and argc > 1:
-                if argv[1] == "on" and argc > 2:
-                    self.window.toggle_hex_mode(argv[2:], True)
-                elif argv[1] == "off" and argc > 2:
-                    self.window.toggle_hex_mode(argv[2:], False)
+            elif argv[0][0:1] == "/":
+                if argv[0][1:2] in fmt_list:
+                    if argc > 1:
+                        self.window.set_format(argv[1:], argv[0][1:2])
+                    else:
+                        print("watch /FMT variable-list")
                 else:
-                    print("watch hex [on|off] variable-list")
+                    if argv[0][1:2] == 'C':
+                        if argc > 1:
+                            self.window.clear_format(argv[1:])
+                        else:
+                            print("watch /C variable-list")
+                    else:
+                        print("watch /FMT variable-list")
             elif argv[0] == "type" and argc == 2:
                 if argv[1] == "on":
                     self.window.toggle_type_mode(True)
@@ -77,7 +88,7 @@ class WatchWindow(object):
         self.list = []
         self.type_mode = False
 
-    def add_watch(self, list, hex_mode=False):
+    def add_watch(self, list, fmt=None):
         for name in list:
             symbol = gdb.lookup_global_symbol(name)
             if symbol and symbol.is_variable:
@@ -100,14 +111,21 @@ class WatchWindow(object):
                         print(f'watch: {name} not found in current frame.')
                         return
 
-            self.watch[name] = {'tag': tag, 'type': str(symbol.type) , 'hex': hex_mode, 'val': None}
+            self.watch[name] = {'tag': tag, 'type': str(symbol.type), 'fmt': fmt, 'val': None}
 
-    def toggle_hex_mode(self, list, mode):
+    def set_format(self, list, fmt):
         for name in list:
             if name in self.watch:
-                self.watch[name]['hex'] = mode
+                self.watch[name]['fmt'] = fmt
             else:
-                self.add_watch([name], mode)
+                self.add_watch([name], fmt)
+
+    def clear_format(self, list):
+        for name in list:
+            if name in self.watch:
+                self.watch[name]['fmt'] = None
+            else:
+                print(f'watch /C: {name} not found')
 
     def toggle_type_mode(self, mode):
         self.type_mode = mode
@@ -151,16 +169,21 @@ class WatchWindow(object):
                 value = frame.read_var(name)
                 hint = BLUE if attr['val'] != value else WHITE
                 self.watch[name]['val'] = value
-                st = value.format_string(format="x") if attr['hex'] else value
+
+                if attr['fmt']:
+                    value = value.format_string(format=attr['fmt'])
+                
                 if self.type_mode:
-                    self.list.append(f'{attr["tag"]}{YELLOW}{attr["type"]:<16}{GREEN}{name:<10}{hint}{st}{RESET}{NL}')
+                    self.list.append(f'{attr["tag"]}{YELLOW}{attr["type"]:<16}{GREEN}{name:<10}{hint}{value}{RESET}{NL}')
                 else:
-                    self.list.append(f'{GREEN}{name:<10}{hint}{st}{RESET}{NL}')
+                    self.list.append(f'{GREEN}{name:<10}{hint}{value}{RESET}{NL}')
             except ValueError:
+                value = attr['val'].format_string(format=attr['fmt']) if attr['fmt'] else attr['val']
+
                 if self.type_mode:
-                    self.list.append(f'{GREY}{attr["tag"]}{attr["type"]:<16}{name:<10}{attr["val"]}{RESET}{NL}')
+                    self.list.append(f'{GREY}{attr["tag"]}{attr["type"]:<16}{name:<10}{value}{RESET}{NL}')
                 else:
-                    self.list.append(f'{GREY}{name:<10}{attr["val"]}{RESET}{NL}')
+                    self.list.append(f'{GREY}{name:<10}{value}{RESET}{NL}')
 
         self.render()
 
