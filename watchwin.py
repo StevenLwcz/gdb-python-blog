@@ -10,22 +10,22 @@ fmt_list = ['o', 'x', 'd', 'u', 't', 'f', 'a', 'i', 'c', 's', 'z']
 
 class WatchCmd(gdb.Command):
     """Add variables to the TUI Window watch.
-watch variable-list
+watchwin variable-list
     Variables will be greyed out when they go out of scope.
     Changes to values while stepping are highlighted in blue.
-watch /FMT  variable-list
+watchwin /FMT  variable-list
     Set the format specifier as per print /FMT for the variable list
-watch /C variable-list
+watchwin /C variable-list
     Clear the format specifier for the variable list
-watch del variable-list
+watchwin del variable-list
     Delete variables from the watch window.
-watch clear
+watchwin clear
     Clears all variables from the watch window.
-watch type [on|off]
+watchwin type [on|off]
     Toggle display of the variable type and indicator: static(=), global(^) or argument(*)."""
 
     def __init__(self):
-       super(WatchCmd, self).__init__("watch", gdb.COMMAND_DATA)
+       super(WatchCmd, self).__init__("watchwin", gdb.COMMAND_DATA)
        self.window = None
 
     def set_window(self, window):
@@ -36,7 +36,7 @@ watch type [on|off]
         argc = len(argv)
         if self.window:
             if argc == 0:
-                print("watch variable-list")
+                print("watchwin variable-list")
             elif argv[0] == "del" and argc > 1:
                 self.window.delete_from_watch_list(argv[1:]) 
             elif argv[0] == "clear":
@@ -46,26 +46,26 @@ watch type [on|off]
                     if argc > 1:
                         self.window.set_format(argv[1:], argv[0][1:2])
                     else:
-                        print("watch /FMT variable-list")
+                        print("watchwin /FMT variable-list")
                 else:
                     if argv[0][1:2] == 'C':
                         if argc > 1:
                             self.window.clear_format(argv[1:])
                         else:
-                            print("watch /C variable-list")
+                            print("watchwin /C variable-list")
                     else:
-                        print("watch /FMT variable-list")
+                        print("watchwin /FMT variable-list")
             elif argv[0] == "type" and argc == 2:
                 if argv[1] == "on":
                     self.window.toggle_type_mode(True)
                 elif argv[1] == "off":
                     self.window.toggle_type_mode(False)
                 else:
-                    print("watch type [on|off]")
+                    print("watchwin type [on|off]")
             else:
                 self.window.add_watch(argv) 
         else:
-            print("watch: Tui Window not active yet")
+            print("watchwin: Tui Window not active yet")
 
 watchCmd = WatchCmd()
 
@@ -105,10 +105,10 @@ class WatchWindow(object):
                         elif symbol.is_variable:
                             tag = " "
                         else: 
-                            print(f'watch: {name} is not a variable or argument.')
+                            print(f'watchwin: {name} is not a variable or argument.')
                             return
                     else:
-                        print(f'watch: {name} not found in current frame.')
+                        print(f'watchwin: {name} not found in current frame.')
                         return
 
             self.watch[name] = {'tag': tag, 'type': str(symbol.type), 'fmt': fmt, 'val': None}
@@ -125,7 +125,7 @@ class WatchWindow(object):
             if name in self.watch:
                 self.watch[name]['fmt'] = None
             else:
-                print(f'watch /C: {name} not found')
+                print(f'watchwin /C: {name} not found')
 
     def toggle_type_mode(self, mode):
         self.type_mode = mode
@@ -138,7 +138,7 @@ class WatchWindow(object):
             try:
                 del self.watch[l]
             except:
-                print(f"watch del: {l} not found")
+                print(f"watchwin del: {l} not found")
 
     def vscroll(self, num):
         if num > 0 and num + self.start < len(self.list) or \
