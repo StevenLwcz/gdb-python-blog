@@ -76,6 +76,32 @@ def WatchWinFactory(tui):
     gdb.events.before_prompt.connect(win.create_watch)
     return win
 
+def substr_end_with_ansi(start_off, st):
+    """return the end of the string starting from start_off
+       will always return the end of line characters"""
+
+    seq = ""
+    esc = False
+    count = 0
+    for i, c in enumerate(st):
+        if esc:
+            seq += c
+            count += 1
+            if c == 'm':
+               esc = False
+        else:
+            if i - count >= start_off:
+                break
+
+            if c == '\x1b':
+                esc = True
+                seq = '\x1b'
+                count += 1
+            elif c == '\n':
+                break
+
+    return(seq + st[i:])
+
 class WatchWindow(object):
 
     save_watch = {}
@@ -85,6 +111,7 @@ class WatchWindow(object):
         self.watch = WatchWindow.save_watch
         self.title = ""
         self.start = 0
+        self.horiz = 0
         self.list = []
         self.type_mode = False
 
@@ -146,6 +173,11 @@ class WatchWindow(object):
             self.start += num
             self.render()
 
+    def hscroll(self, num):
+        if num > 0 or num < 0 and num + self.horiz >= 0:
+            self.horiz += num
+            self.render()
+
     def close(self):
         gdb.events.before_prompt.disconnect(self.create_watch)
         # save the watch dictionary so it will be restored when the window is activated
@@ -194,7 +226,12 @@ class WatchWindow(object):
         self.tui.title = self.title
         self.tui.erase()
 
-        for l in self.list[self.start:]:
-            self.tui.write(l)
+        if self.horiz == 0:
+            for l in self.list[self.start:]:
+                self.tui.write(l)
+        else:
+            for l in self.list[self.start:]:
+                self.tui.write(substr_end_with_ansi(self.horiz, l))
 
 gdb.register_window_type("watch", WatchWinFactory)
+
