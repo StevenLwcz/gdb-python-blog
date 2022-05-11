@@ -29,19 +29,22 @@ display the memory in a TUI Window"""
 
    def invoke(self, arguments, from_tty):
         argv = gdb.string_to_argv(arguments)
-        output = gdb.execute("x /100xb p1", False, True)
+        len = self.window.tui.height * 8
+        output = gdb.execute(f"x /{len}xb p1", False, True)
         self.window.set_display(output)
  
 xwin = XWCmd()
 
 def AutoWinFactory(tui):
-    win = AutoWindow(tui)
+    win = MemoryWindow(tui)
     xwin.set_window(win)
     # register create_auto() to be called each time the gdb prompt will be displayed
     # gdb.events.before_prompt.connect(win.create_auto)
     return win
 
-class AutoWindow(object):
+import re
+
+class MemoryWindow(object):
 
     def __init__(self, tui):
         self.tui = tui
@@ -57,7 +60,7 @@ class AutoWindow(object):
             i = line.index(':')
             # c = bytes.fromhex(line[i + 1:]).decode('ascii', 'replace')
             c = bytes.fromhex(line[i + 1:]).decode('cp437', 'replace')
-            c = c.replace("\x00", '.')
+            c = re.sub('\W', '.', c)
             self.list.append(line + ' ' + c) 
 
         self.render()
