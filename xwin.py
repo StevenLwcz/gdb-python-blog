@@ -29,8 +29,13 @@ display the memory in a TUI Window"""
 
    def invoke(self, arguments, from_tty):
         argv = gdb.string_to_argv(arguments)
-        len = self.window.tui.height * 8
-        output = gdb.execute(f"x /{len}xb p1", False, True)
+        argc = len(argv)
+        if argc == 0:
+            print("xw expression")
+            return
+
+        n = self.window.tui.height * 8
+        output = gdb.execute(f"x /{n}xb {argv[0]}", False, True)
         self.window.set_display(output)
  
 xwin = XWCmd()
@@ -56,6 +61,7 @@ class MemoryWindow(object):
     def set_display(self, text):
         x = text.replace('\t', ' ')
         x = x.replace('0x', '')
+        self.addr = ""
         for line in x.splitlines():
             i = line.index(':')
             # c = bytes.fromhex(line[i + 1:]).decode('ascii', 'replace')
@@ -63,6 +69,7 @@ class MemoryWindow(object):
             c = re.sub('\W', '.', c)
             self.list.append(line + ' ' + c) 
 
+        self.addr = int(line[0:i], 16)
         self.render()
 
     # def close(self):
@@ -73,6 +80,11 @@ class MemoryWindow(object):
         if num > 0 and num + self.start < len(self.list) or \
            num < 0 and num + self.start >= 0:
             self.start += num
+            if num > 0:
+                self.addr += 8
+                output = gdb.execute(f"x /8xb {self.addr}", False, True)
+                self.set_display(output)
+
             self.render()
 
     def hscroll(self, num):
