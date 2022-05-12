@@ -35,8 +35,13 @@ display the memory in a TUI Window"""
             return
 
         n = self.window.tui.height * 8
-        output = gdb.execute(f"x /{n}xb {argv[0]}", False, True)
-        self.window.set_display(output)
+        try:
+            output = gdb.execute(f"x /{n}xb {argv[0]}", False, True)
+            self.window.set_title(argv[0])
+            self.window.set_display(output)
+        except gdb.MemoryError:
+            print(f"xw: Can't read memory at the location {argv[0]}")
+
  
 xwin = XWCmd()
 
@@ -57,6 +62,7 @@ class MemoryWindow(object):
         self.horiz = 0
         self.title = ""
         self.list = []
+        self.cmd = ""
 
     def set_display(self, text):
         x = text.replace('\t', ' ')
@@ -72,18 +78,28 @@ class MemoryWindow(object):
         self.addr = int(line[0:i], 16)
         self.render()
 
+    def set_title(self, text):
+        print(text)
+        self.cmd = text
+        self.title = text
+
     # def close(self):
         # stop create_auto() being called when the window has been closed
         # gdb.events.before_prompt.disconnect(self.create_auto)
 
     def vscroll(self, num):
-        if num > 0 and num + self.start < len(self.list) or \
-           num < 0 and num + self.start >= 0:
+        self.title = self.cmd
+        if num + self.start >= 0:
             self.start += num
-            if num > 0:
-                self.addr += 8
-                output = gdb.execute(f"x /8xb {self.addr}", False, True)
-                self.set_display(output)
+            if self.start + self.tui.height >= len(self.list):
+                self.addr += 8 * num
+                try:
+                    output = gdb.execute(f"x /{8 * num}xb {self.addr}", False, True)
+                    self.set_display(output)
+                except gdb.MemoryError:
+                    self.addr -= 8 * num
+                    self.start -= num
+                    self.title = "Can't read any more memory."
 
             self.render()
 
