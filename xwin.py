@@ -1,7 +1,7 @@
 # two versions 
-# one to dump x to window (hexdump)
+# one to dump x to Tui Window (xwin)
 #   only scroll contents if too big for window
-# one to do hex dump with characters to the side (xwin)
+# one to do mem dumpn hex with characters to the side (memdump)
 #   can scroll address back and forth
 # colourise address?
 # colourise change of values on step????
@@ -15,13 +15,12 @@ NL = "\n\n"
 
 fmt_list = ['o', 'x', 'd', 'u', 't', 'f', 'a', 'i', 'c', 's', 'z']
 
-class XWCmd(gdb.Command):
-   """xw [/FMT] expression
-/FMT as per GDB command x.
-display the memory in a TUI Window"""
+class MemDumpCmd(gdb.Command):
+   """memdump expression
+display the memory expression in a TUI Window"""
 
    def __init__(self):
-       super().__init__("xw", gdb.COMMAND_DATA)
+       super().__init__("memdump", gdb.COMMAND_DATA)
        self.window = None
 
    def set_window(self, window):
@@ -31,23 +30,23 @@ display the memory in a TUI Window"""
         argv = gdb.string_to_argv(arguments)
         argc = len(argv)
         if argc == 0:
-            print("xw expression")
+            print("memdump expression")
             return
 
         n = self.window.tui.height * 8
         try:
-            output = gdb.execute(f"x /{n}xb {argv[0]}", False, True)
+            output = gdb.execute(f'x /{n}xb {argv[0]}', False, True)
             self.window.set_title(argv[0])
             self.window.set_display(output)
         except gdb.MemoryError:
-            print(f"xw: Can't read memory at the location {argv[0]}")
+            print(f"memdump: Can't read memory at the location {argv[0]}")
 
  
-xwin = XWCmd()
+memdump = MemDumpCmd()
 
-def AutoWinFactory(tui):
+def MemDumpFactory(tui):
     win = MemoryWindow(tui)
-    xwin.set_window(win)
+    memdump.set_window(win)
     # register create_auto() to be called each time the gdb prompt will be displayed
     # gdb.events.before_prompt.connect(win.create_auto)
     return win
@@ -126,4 +125,4 @@ class MemoryWindow(object):
     # def create_auto(self):
         # self.render()
 
-gdb.register_window_type("xwin", AutoWinFactory)
+gdb.register_window_type("memwin", MemDumpFactory)
