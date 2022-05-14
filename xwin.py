@@ -66,6 +66,8 @@ import re
 
 class MemoryWindow(object):
 
+    pattern = re.compile('[^\w\x20-\x7e]')
+
     def __init__(self, tui):
         self.tui = tui
         self.start = 0
@@ -83,7 +85,7 @@ class MemoryWindow(object):
             i = line.index(':')
             # c = bytes.fromhex(line[i + 1:]).decode('ascii', 'replace')
             c = bytes.fromhex(line[i + 1:]).decode('cp437', 'replace')
-            c = re.sub('[^\w\x20-\x7e]', '.', c)
+            c = MemoryWindow.pattern.sub('.', c)
             self.list.append(line + ' ' + c) 
 
         self.addr = int(line[0:i], 16)
