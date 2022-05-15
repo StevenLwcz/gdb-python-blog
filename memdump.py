@@ -2,11 +2,37 @@
 # colourise change of values on step?
 
 GREEN = "\x1b[38;5;47m"
-BLUE  = "\x1b[38;5;14m"
+BLUE  = "\x1b[38;5;4m"
 WHITE = "\x1b[38;5;15m"
-YELLOW = "\x1b[38;5;226m"
+YELLOW = "\x1b[38;5;154m"
 RESET = "\x1b[0m"
 NL = "\n\n"
+
+def substr_end_with_ansi(start_off, st):
+    """return the end of the string starting from start_off
+       will always return the end of line characters"""
+
+    seq = ""
+    esc = False
+    count = 0
+    for i, c in enumerate(st):
+        if esc:
+            seq += c
+            count += 1
+            if c == 'm':
+               esc = False
+        else:
+            if i - count >= start_off:
+                break
+
+            if c == '\x1b':
+                esc = True
+                seq = '\x1b'
+                count += 1
+            elif c == '\n':
+                break
+
+    return(seq + st[i:])
 
 class MemDumpCmd(gdb.Command):
    """memdump expression
@@ -101,7 +127,7 @@ class MemoryWindow(object):
                 self.tui.write(l)
         else:
             for l in self.list[self.start:]:
-                self.tui.write(l[self.horiz:])
+                self.tui.write(substr_end_with_ansi(self.horiz, l))
 
 # Handle x command with 2 arguments
     def vscroll_1(self, num):
@@ -117,7 +143,8 @@ class MemoryWindow(object):
         self.mode = self.vscroll_1
         x = text.replace('\t', ' ')
         for line in x.splitlines():
-            self.list.append(line + NL) 
+            i = line.index(':')
+            self.list.append(BLUE + line[:i] + RESET + line[i:] + NL) 
 
         self.render()
 
@@ -150,7 +177,7 @@ class MemoryWindow(object):
             # c = bytes.fromhex(line[i + 1:]).decode('ascii', 'replace')
             c = bytes.fromhex(line[i + 1:]).decode('cp437', 'replace')
             c = MemoryWindow.pattern.sub('.', c)
-            self.list.append(line + ' ' + c + NL) 
+            self.list.append(BLUE + line[:i] + RESET + line[i:] + ' ' + YELLOW + c + RESET + NL) 
 
         self.addr = int(line[0:i], 16)
         self.render()
