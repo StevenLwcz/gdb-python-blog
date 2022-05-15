@@ -1,10 +1,5 @@
-# two versions 
-# one to dump x to Tui Window (xw)
-#   only scroll contents if too big for window
-# one to do mem dumpn hex with characters to the side (memdump)
-#   can scroll address back and forth
 # colourise address?
-# colourise change of values on step????
+# colourise change of values on step?
 
 GREEN = "\x1b[38;5;47m"
 BLUE  = "\x1b[38;5;14m"
@@ -12,8 +7,6 @@ WHITE = "\x1b[38;5;15m"
 YELLOW = "\x1b[38;5;226m"
 RESET = "\x1b[0m"
 NL = "\n\n"
-
-fmt_list = ['o', 'x', 'd', 'u', 't', 'f', 'a', 'i', 'c', 's', 'z']
 
 class MemDumpCmd(gdb.Command):
    """memdump expression
@@ -28,6 +21,10 @@ display the memory expression in a TUI Window"""
        self.window = window
 
    def invoke(self, arguments, from_tty):
+        if self.window == None:
+            print("memdump: Tui mode not enabled")
+            return
+
         argv = gdb.string_to_argv(arguments)
         argc = len(argv)
         if argc == 0:
@@ -35,29 +32,28 @@ display the memory expression in a TUI Window"""
             return
 
         if argc == 1:
-            try:
-                n = self.window.tui.height * 8
-                output = gdb.execute(f'x /{n}xb {argv[0]}', False, True)
-                self.window.set_title(argv[0])
-                self.window.set_display(output)
-            except gdb.MemoryError:
-                print(f"memdump: Can't read memory at the location {argv[0]}")
+             n = self.window.tui.height * 8
+             cmd =  f'/{n}xb {argv[0]}'
+             set_display = self.window.set_display_2
         elif argc == 2:
-            try:
-                print(f'x /{argv[0]} {argv[1]}')
-                output = gdb.execute(f'x {argv[0]} {argv[1]}', False, True)
-                self.window.set_title(argv[0] + " " + argv[1])
-                self.window.set_x_display(output)
-            except gdb.MemoryError:
-                print(f"memdump: Can't read memory at the location {argv[1]}")
+             cmd = f'{argv[0]} {argv[1]}'
+             set_display = self.window.set_display_1
         else:
             print('memdump [/FMT] expression')
-        
-memdump = MemDumpCmd()
+            return
+
+        try:
+            output = gdb.execute(f'x {cmd}', False, True)
+            self.window.set_title(cmd)
+            set_display(output)
+        except gdb.MemoryError:
+            print(f"memdump: Can't read memory at the location for {cmd}")
+
+memdumpCmd = MemDumpCmd()
 
 def MemDumpFactory(tui):
     win = MemoryWindow(tui)
-    memdump.set_window(win)
+    memdumpCmd.set_window(win)
     # register create_auto() to be called each time the gdb prompt will be displayed
     # gdb.events.before_prompt.connect(win.create_auto)
     return win
@@ -75,33 +71,9 @@ class MemoryWindow(object):
         self.title = ""
         self.list = []
         self.cmd = ""
-
-    def set_display(self, text):
-        self.x = False
-        x = text.replace('\t', ' ')
-        x = x.replace('0x', '')
-        self.addr = ""
-        for line in x.splitlines():
-            i = line.index(':')
-            # c = bytes.fromhex(line[i + 1:]).decode('ascii', 'replace')
-            c = bytes.fromhex(line[i + 1:]).decode('cp437', 'replace')
-            c = MemoryWindow.pattern.sub('.', c)
-            self.list.append(line + ' ' + c) 
-
-        self.addr = int(line[0:i], 16)
-        self.render()
-
-    def set_x_display(self, text):
-        self.x = True
-        self.list = []
-        x = text.replace('\t', ' ')
-        for line in x.splitlines():
-            self.list.append(line) 
-
-        self.render()
+        self.mode = None
 
     def set_title(self, text):
-        print(text)
         self.cmd = text
         self.title = text
 
@@ -109,33 +81,13 @@ class MemoryWindow(object):
         # stop create_auto() being called when the window has been closed
         # gdb.events.before_prompt.disconnect(self.create_auto)
 
-    def vscroll(self, num):
-        self.title = self.cmd
-        if self.x:
-            if num > 0 and num + self.start < len(self.list) or \
-               num < 0 and num + self.start >= 0:
-                self.start += num
-
-                self.render()
-        else:
-            if num + self.start >= 0:
-                self.start += num
-                if self.start + self.tui.height >= len(self.list):
-                    self.addr += 8 * num
-                    try:
-                        output = gdb.execute(f"x /{8 * num}xb {self.addr}", False, True)
-                        self.set_display(output)
-                    except gdb.MemoryError:
-                        self.addr -= 8 * num
-                        self.start -= num
-                        self.title = "Can't read any more memory."
-
-                self.render()
-
     def hscroll(self, num):
         if num > 0 or num < 0 and num + self.horiz >= 0:
             self.horiz += num
             self.render()
+
+    def vscroll(self, num):
+        self.mode(num)
 
     def render(self):
         if not self.tui.is_valid():
@@ -146,13 +98,61 @@ class MemoryWindow(object):
 
         if self.horiz == 0:
             for l in self.list[self.start:]:
-                self.tui.write(l + NL)
+                self.tui.write(l)
         else:
             for l in self.list[self.start:]:
-                self.tui.write(l[self.horiz:] )
-                self.tui.write(NL)
+                self.tui.write(l[self.horiz:])
 
-    # def create_auto(self):
-        # self.render()
+# Handle x command with 2 arguments
+    def vscroll_1(self, num):
+        self.title = self.cmd
+        if num > 0 and num + self.start < len(self.list) or \
+           num < 0 and num + self.start >= 0:
+            self.start += num
+
+            self.render()
+
+    def set_display_1(self, text):
+        self.list.clear()
+        self.mode = self.vscroll_1
+        x = text.replace('\t', ' ')
+        for line in x.splitlines():
+            self.list.append(line + NL) 
+
+        self.render()
+
+# Memory dump at address
+    def vscroll_2(self, num):
+        if num + self.start >= 0:
+            self.start += num
+            if self.start + self.tui.height >= len(self.list):
+                self.addr += 8 * num
+                try:
+                    output = gdb.execute(f"x /{8 * num}xb {self.addr}", False, True)
+                    self.set_display_2(output, True)
+                except gdb.MemoryError:
+                    self.addr -= 8 * num
+                    self.start -= num
+                    self.title = "Can't read any more memory."
+
+            self.render()
+
+    def set_display_2(self, text, append=False):
+        if not append:
+            self.list.clear()
+            self.mode = self.vscroll_2
+
+        x = text.replace('\t', ' ')
+        x = x.replace('0x', '')
+        self.addr = ""
+        for line in x.splitlines():
+            i = line.index(':')
+            # c = bytes.fromhex(line[i + 1:]).decode('ascii', 'replace')
+            c = bytes.fromhex(line[i + 1:]).decode('cp437', 'replace')
+            c = MemoryWindow.pattern.sub('.', c)
+            self.list.append(line + ' ' + c + NL) 
+
+        self.addr = int(line[0:i], 16)
+        self.render()
 
 gdb.register_window_type("memwin", MemDumpFactory)
