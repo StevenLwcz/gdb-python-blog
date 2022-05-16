@@ -62,6 +62,7 @@ display the memory expression in a TUI Window"""
             self.window.create_display()
         except gdb.error:
             print(f"memdump: syntax error for {arguments}")
+            self.window.set_title(arguments, 0)
 
 memdumpCmd = MemDumpCmd()
 
@@ -94,9 +95,12 @@ class MemoryWindow(object):
         if num == 2:
             self.mode = self.vscroll_1
             self.create_display = self.create_display_1
-        else:
+        elif num == 1:
             self.mode = self.vscroll_2
             self.create_display = self.create_display_2
+        else:
+            self.mode = None
+            self.create_display = self.set_default
 
     def set_default(self):
         self.tui.title = 'Memory Dump'
@@ -175,8 +179,8 @@ class MemoryWindow(object):
     def set_display_2(self, text, append=False):
         if not append:
             self.list.clear()
+            self.cmd = text[0:text.index(':')] # used for update_memdump()
 
-        self.cmd = text[0:text.index(':')]
         x = text.replace('\t', ' ')
         x = x.replace('0x', '')
 
@@ -187,11 +191,12 @@ class MemoryWindow(object):
             c = MemoryWindow.pattern.sub('.', c)
             self.list.append(BLUE + line[:i] + RESET + line[i:] + ' ' + YELLOW + c + RESET + NL) 
 
-        self.addr = int(line[0:i], 16)
+        self.addr = int(line[0:i], 16)    # used for vscroll_2()
         self.render()
 
     def create_display_2(self):
-        n = self.tui.height * 8
+        l = len(self.list)
+        n = 8 * self.tui.height if l == 0 else l * 8
         try:
             output = gdb.execute(f'x /{n}xb {self.cmd}', False, True)
             self.set_display_2(output)
