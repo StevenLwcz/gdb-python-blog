@@ -90,6 +90,8 @@ class MemoryWindow(object):
         self.create_display = self.set_default
 
     def set_title(self, text, num):
+        self.start = 0
+        self.horiz = 0
         self.cmd = text
         self.title = text
         if num == 2:
@@ -203,4 +205,4 @@ class MemoryWindow(object):
         except gdb.MemoryError:
             print(f"memdump: Can't read memory at the location for {self.cmd}")
 
-gdb.register_window_type("memwin", MemDumpFactory)
+gdb.register_window_type("memdump", MemDumpFactory)
