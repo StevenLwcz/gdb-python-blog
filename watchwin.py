@@ -9,8 +9,8 @@ NL = "\n\n"
 fmt_list = ['o', 'x', 'd', 'u', 't', 'f', 'a', 'i', 'c', 's', 'z']
 
 class WatchCmd(gdb.Command):
-    """Add variables to the TUI Window watch.
-watchwin variable-list
+    """watchwin variable-list
+    Add variables in the current frame to the TUI Window watch.
     Variables will be greyed out when they go out of scope.
     Changes to values while stepping are highlighted in blue.
 watchwin /FMT  variable-list
