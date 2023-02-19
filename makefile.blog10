@@ -1,0 +1,13 @@
+all: blog10
+ 
+%.o:%.s
+	as -march=rv64imafdcv -g -o $@ $<
+
+blog10.o: macro.m
+
+blog10: blog10.o
+	ld -o $@ $<
+	# ld --no-relax -o $@ $<
+
+clean:
+	rm blog10 blog10.o
