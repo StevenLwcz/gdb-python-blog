@@ -1,12 +1,10 @@
-NL = "\n"
-
 GREEN = "\x1b[38;5;47m"
 BLUE  = "\x1b[38;5;14m"
 WHITE = "\x1b[38;5;15m"
 YELLOW = "\x1b[38;5;226m"
 RESET = "\x1b[0m"
+NL = "\n"
 VIEWLINELEN = 16
-
 
 import re
 pattern = re.compile(r'[\x00-\x1f\x7f-\x9f]')
@@ -58,9 +56,6 @@ Memory view at the address of the expression"""
         if not self.win.auto:
             gdb.events.before_prompt.connect(self.win.auto_view)
             self.win.auto = True
-
-# gdb.events.exited.connect(self.win.close_inferior)
-# gdb.events.exited.disconnect(self.close_inferior)
 
 memViewCmd = MemViewCmd()
 
@@ -118,14 +113,9 @@ class MemViewWindow(object):
     def click(self, x, y, button):
         pass
 
-# Factory Method
 def MemViewFactory(tui):
     win = MemViewWindow(tui)
     memViewCmd.set_win(win)
     return win
 
 gdb.register_window_type("memview", MemViewFactory)
-
-
-
-
