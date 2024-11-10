@@ -35,7 +35,7 @@ Memory view at the address of the expression"""
             print("memview: can't evaluate {arguments}")
             return
 
-        addr = int(expr.address) if expr.address != None else expr
+        addr = int(expr.address) if expr.address != None else int(expr)
 
         if self.win == None: 
             gdb.execute("layout memview")
