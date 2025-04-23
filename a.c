@@ -1,24 +1,49 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-int i1 = 0x445599;
-char *s1 = "Red Orange Yellow Green Blue Indigo Violet\n";
-char c[] = {'1', '2', '3', '4', '5', '6'};
-const int i2 = 0x224488;
+// read only
+const int i1 = 0xfecaadbe; // 4
+const long int i2 = 0x8877665544332211; // 8
 
-void main()
+// data
+int i3 = 0x11223344;;
+char *s1 = "@ Red Orange Yellow Green Blue Indigo Violet @"; // literal in read only
+char c[] = {'g', 'l', 'o', 'b', 'a', 'l'};
+
+// bss
+char d[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 , 0 ,0 ,0 ,0 ,0};
+int i4;
+
+// parameters in stack area (or registers)
+int func1(int p1, int p2)
 {
-    char a[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g'};
-    int b = 100;
-    char *s2 = malloc(1024);
+    // local items in stack area
+    int l1 = p1;
+    int l2 = p2;
+    char d[] = {'f', 'u', 'n', 'c', '1', ' '}; // literal copied from read only
+    return l1 + l2;
+}
+
+void main(int argc, char *argv[])
+{
+    // locals in stack area
+    char a[] = {'i', 'n', ' ', 'm', 'a', 'i', 'n'}; // literal copied from read only
+    int i5 = 100;
+    // memory allocated on heap
+    char *s2 = malloc(1024); // heap
     memset(s2, 'x', 1024);
     strcpy(s2, s1);
+    s2 = malloc(1024);
+    memset(s2, 'y', 1024);
+    s2 = malloc(1024);
+    memset(s2, 'z', 1024);
+    printf("* Cyan Yellow Magenta *\n"); // literal in read only
+    d[10] = 10;
+    d[8] = 8;
     a[2] = 'z';
-    b = 101;
     a[3] = 'y';
-    b = 102;
-    a[4] = 'x';
+    i5 = 101;
+    i5 = func1(i5, i5);
     exit(0);
 }
